@@ -1,0 +1,351 @@
+// Pattern Detective PRO (Level-up Version)
+
+let currentPattern = [];
+let displayPattern = "";
+let options = [];
+let correctAnswer = null;
+
+let totalAnswered = 0;
+let totalCorrect = 0;
+let streak = 0;
+
+let level = 1; // 1..5
+let showFeedback = "";
+let feedbackTimer = 0;
+
+let fireworks = false;
+let particles = [];
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  textAlign(CENTER, CENTER);
+  rectMode(CORNER);
+  generateQuestion();
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+function draw() {
+  background(240, 248, 255);
+
+  // header
+  fill(0);
+  textSize(min(40, width * 0.06));
+  text("🕵️ Pattern Detective PRO", width / 2, 55);
+
+  // status
+  textSize(min(22, width * 0.04));
+  fill(30);
+  text(`Level: ${level}   |   Streak: ${streak}   |   Score: ${totalCorrect} / 10`, width / 2, 95);
+
+  // pattern
+  fill(0);
+  textSize(min(44, width * 0.085));
+  text(displayPattern, width / 2, height * 0.32);
+
+  textSize(min(28, width * 0.05));
+  fill(50);
+  text("What comes next?", width / 2, height * 0.42);
+
+  drawOptions();
+
+  // feedback
+  if (feedbackTimer > 0) {
+    feedbackTimer--;
+    textSize(min(30, width * 0.055));
+    fill(0, 140, 0);
+    text(showFeedback, width / 2, height * 0.62);
+  }
+
+  // fireworks after 10 answered
+  if (fireworks) {
+    drawFireworks();
+  }
+}
+
+function drawOptions() {
+  let btnW = min(150, width * 0.22);
+  let btnH = min(70, height * 0.1);
+  let gap = min(22, width * 0.04);
+  let totalW = options.length * btnW + (options.length - 1) * gap;
+
+  let startX = (width - totalW) / 2;
+  let y = height * 0.5;
+
+  for (let i = 0; i < options.length; i++) {
+    let x = startX + i * (btnW + gap);
+    // button
+    fill(255);
+    stroke(180);
+    strokeWeight(2);
+    rect(x, y, btnW, btnH, 18);
+
+    // label
+    noStroke();
+    fill(0);
+    textSize(min(34, btnW * 0.33));
+    text(options[i], x + btnW / 2, y + btnH / 2);
+  }
+}
+
+function mousePressed() {
+  if (fireworks) return;
+
+  let btnW = min(150, width * 0.22);
+  let btnH = min(70, height * 0.1);
+  let gap = min(22, width * 0.04);
+  let totalW = options.length * btnW + (options.length - 1) * gap;
+
+  let startX = (width - totalW) / 2;
+  let y = height * 0.5;
+
+  for (let i = 0; i < options.length; i++) {
+    let x = startX + i * (btnW + gap);
+    if (mouseX >= x && mouseX <= x + btnW && mouseY >= y && mouseY <= y + btnH) {
+      checkAnswer(options[i]);
+      return;
+    }
+  }
+}
+
+function checkAnswer(choice) {
+  totalAnswered++;
+
+  if (choice === correctAnswer) {
+    totalCorrect++;
+    streak++;
+
+    let praise = [
+      "🎉 Brilliant!",
+      "🌟 Detective Skills!",
+      "🚀 Super Brain!",
+      "🏆 You nailed it!",
+      "✨ Pattern Master!"
+    ];
+    showFeedback = random(praise);
+    feedbackTimer = 60;
+
+    // level up rules (fast but fair)
+    if (totalCorrect >= 2) level = max(level, 2);
+    if (totalCorrect >= 4) level = max(level, 3);
+    if (totalCorrect >= 6) level = max(level, 4);
+    if (totalCorrect >= 8) level = max(level, 5);
+
+  } else {
+    streak = 0;
+    showFeedback = "💛 Nice try! Look again!";
+    feedbackTimer = 60;
+  }
+
+  if (totalAnswered >= 10) {
+    fireworks = true;
+    spawnFireworks();
+    showFeedback = `🌟 10 Patterns Done! Score: ${totalCorrect}/10 🌟`;
+    feedbackTimer = 999999; // keep
+  } else {
+    setTimeout(() => {
+      generateQuestion();
+    }, 650);
+  }
+}
+
+/* --------------------------
+   Question Generator
+-------------------------- */
+
+function generateQuestion() {
+  let maxNum = (level <= 2) ? 12 : (level <= 4 ? 20 : 30);
+  let types = getAllowedTypesByLevel(level);
+  let type = random(types);
+
+  let q = null;
+  if (type === "ABAB") q = makeABAB(maxNum);
+  if (type === "AABB") q = makeAABB(maxNum);
+  if (type === "ABCABC") q = makeABCABC(maxNum);
+  if (type === "PLUS2") q = makePlusK(maxNum, 2);
+  if (type === "PLUS3") q = makePlusK(maxNum, 3);
+  if (type === "ALT12") q = makeAlternate12(maxNum);
+  if (type === "BLOCK") q = makeRepeatBlock(maxNum);
+  if (type === "PAL") q = makePalindrome(maxNum);
+  if (type === "SKIP") q = makeSkipCounting(maxNum);
+  if (type === "DOUBLE") q = makeDouble(maxNum);
+
+  currentPattern = q.pattern;
+  correctAnswer = q.answer;
+  options = q.options;
+
+  // display string with nice spacing
+  displayPattern = currentPattern.join("   ");
+}
+
+function getAllowedTypesByLevel(lv) {
+  if (lv === 1) return ["ABAB", "AABB", "PLUS2"];
+  if (lv === 2) return ["ABAB", "AABB", "PLUS2", "ALT12", "BLOCK"];
+  if (lv === 3) return ["ABAB", "AABB", "PLUS2", "PLUS3", "ALT12", "BLOCK", "ABCABC"];
+  if (lv === 4) return ["PLUS2", "PLUS3", "ALT12", "BLOCK", "ABCABC", "PAL", "SKIP"];
+  return ["PLUS2", "PLUS3", "ALT12", "BLOCK", "ABCABC", "PAL", "SKIP", "DOUBLE"];
+}
+
+function makeOptionsSmart(answer, pool, count=3) {
+  // Create distractors that are close & plausible
+  let set = new Set([answer]);
+
+  // add near numbers
+  let candidates = [];
+  for (let d of [-2, -1, 1, 2, 3, -3]) candidates.push(answer + d);
+  candidates = candidates.filter(x => x >= 1 && x <= pool);
+
+  // add some randoms
+  for (let i = 0; i < 10; i++) candidates.push(floor(random(1, pool + 1)));
+
+  // fill set
+  shuffle(candidates, true);
+  for (let x of candidates) {
+    if (set.size >= count) break;
+    if (x !== answer) set.add(x);
+  }
+
+  // fallback
+  while (set.size < count) {
+    set.add(floor(random(1, pool + 1)));
+  }
+
+  let arr = Array.from(set);
+  return shuffle(arr, true);
+}
+
+/* ----- Pattern Types ----- */
+
+function makeABAB(maxNum) {
+  let a = floor(random(1, maxNum + 1));
+  let b = floor(random(1, maxNum + 1));
+  while (b === a) b = floor(random(1, maxNum + 1));
+  let pattern = [a, b, a, b, "?"];
+  let answer = a;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+function makeAABB(maxNum) {
+  let a = floor(random(1, maxNum + 1));
+  let b = floor(random(1, maxNum + 1));
+  while (b === a) b = floor(random(1, maxNum + 1));
+  let pattern = [a, a, b, b, "?"];
+  let answer = (random() < 0.5) ? a : b; // trickier
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+function makeABCABC(maxNum) {
+  let a = floor(random(1, maxNum + 1));
+  let b = floor(random(1, maxNum + 1));
+  let c = floor(random(1, maxNum + 1));
+  while (b === a) b = floor(random(1, maxNum + 1));
+  while (c === a || c === b) c = floor(random(1, maxNum + 1));
+  let pattern = [a, b, c, a, b, c, "?"];
+  let answer = a;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+function makePlusK(maxNum, k) {
+  let start = floor(random(1, maxNum - (k * 4)));
+  let pattern = [start, start + k, start + 2*k, start + 3*k, "?"];
+  let answer = start + 4*k;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+// alternate +1, +2, +1, +2 ...
+function makeAlternate12(maxNum) {
+  let start = floor(random(1, maxNum - 10));
+  let p1 = start;
+  let p2 = p1 + 1;
+  let p3 = p2 + 2;
+  let p4 = p3 + 1;
+  let pattern = [p1, p2, p3, p4, "?"];
+  let answer = p4 + 2;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+// repeat block like [a,b] [a,b] [a,b] ...
+function makeRepeatBlock(maxNum) {
+  let a = floor(random(1, maxNum + 1));
+  let b = floor(random(1, maxNum + 1));
+  while (b === a) b = floor(random(1, maxNum + 1));
+  let pattern = [a, b, a, b, a, b, "?"];
+  let answer = a;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+// palindrome / mirror like 2 5 7 5 ?
+function makePalindrome(maxNum) {
+  let a = floor(random(1, maxNum + 1));
+  let b = floor(random(1, maxNum + 1));
+  let c = floor(random(1, maxNum + 1));
+  // pattern: a b c b ?
+  let pattern = [a, b, c, b, "?"];
+  let answer = a;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+// skip counting like 3 6 9 12 ?
+function makeSkipCounting(maxNum) {
+  let step = random([2, 3, 4, 5]);
+  let start = floor(random(1, maxNum - step * 4));
+  // make start multiple-ish? not required
+  let pattern = [start, start + step, start + 2*step, start + 3*step, "?"];
+  let answer = start + 4*step;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+// doubling-ish (small to keep kid-friendly): 2 4 8 16 ?
+function makeDouble(maxNum) {
+  let start = random([1, 2, 3, 4]);
+  let p1 = start;
+  let p2 = p1 * 2;
+  let p3 = p2 * 2;
+  let p4 = p3 * 2;
+  // ensure within bounds; if too big, fallback to +2
+  if (p4 * 2 > maxNum) return makePlusK(maxNum, 2);
+  let pattern = [p1, p2, p3, p4, "?"];
+  let answer = p4 * 2;
+  return { pattern, answer, options: makeOptionsSmart(answer, maxNum) };
+}
+
+/* --------------------------
+   Fireworks (simple particles)
+-------------------------- */
+
+function spawnFireworks() {
+  particles = [];
+  for (let i = 0; i < 250; i++) {
+    particles.push({
+      x: width / 2,
+      y: height / 2,
+      vx: random(-7, 7),
+      vy: random(-7, 7),
+      life: floor(random(40, 90)),
+      size: random(3, 6),
+      r: random(255),
+      g: random(255),
+      b: random(255)
+    });
+  }
+}
+
+function drawFireworks() {
+  // dark overlay
+  fill(0, 30);
+  rect(0, 0, width, height);
+
+  for (let p of particles) {
+    if (p.life <= 0) continue;
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.08;
+    p.life--;
+
+    noStroke();
+    fill(p.r, p.g, p.b, map(p.life, 0, 90, 0, 255));
+    ellipse(p.x, p.y, p.size);
+  }
+}
