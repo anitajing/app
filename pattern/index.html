@@ -1,4 +1,44 @@
-// Pattern Detective PRO (Level-up Version)
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pattern Detective</title>
+
+  <!-- iPhone/iPad 屏幕适配 + 安全区 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <!-- iOS: 允许“添加到主屏幕”后全屏运行 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pattern Detective">
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0b1220">
+
+  <!-- iOS 桌面图标（至少要有 180x180） -->
+  <link rel="apple-touch-icon" href="icon-180.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0b1220;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    canvas { display: block; }
+  </style>
+
+  <!-- p5.js（省事版：CDN） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+</head>
+
+<body>
+  <script>
+    // Pattern Detective PRO (Level-up Version)
 
 let currentPattern = [];
 let displayPattern = "";
@@ -349,3 +389,15 @@ function drawFireworks() {
     ellipse(p.x, p.y, p.size);
   }
 }
+  </script>
+
+  <script>
+    // 注册 service worker（你的文件叫 sweet.js）
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sweet.js");
+      });
+    }
+  </script>
+</body>
+</html>
