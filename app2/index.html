@@ -1,1 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Phonics & Spelling Game</title>
 
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #f6f7fb; color: #111; }
+    header { padding: 14px 16px; background: #fff; position: sticky; top: 0; border-bottom: 1px solid #e7e7ee; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 16px; }
+    .card { background: #fff; border: 1px solid #e7e7ee; border-radius: 14px; padding: 14px; box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+    h1 { font-size: 18px; margin: 0; }
+    h2 { font-size: 16px; margin: 0 0 8px 0; }
+    .pill { padding: 6px 10px; border-radius: 999px; background: #f0f2ff; border: 1px solid #dfe3ff; font-size: 13px; }
+    button {
+      border: 1px solid #d6d6e0; background: #fff; padding: 10px 12px;
+      border-radius: 12px; font-size: 15px; cursor: pointer;
+    }
+    button.primary { background: #111; color: #fff; border-color: #111; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    input {
+      width: 100%; padding: 12px; font-size: 18px; border-radius: 12px;
+      border: 1px solid #d6d6e0;
+    }
+    .big { font-size: 22px; font-weight: 700; }
+    .msg { min-height: 22px; margin-top: 10px; font-weight: 600; }
+    .good { color: #0a7a2f; }
+    .bad { color: #b00020; }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    @media (min-width: 760px) { .grid { grid-template-columns: 1.2fr .8fr; } }
+    .stickers { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sticker { font-size: 22px; background: #fff7dd; border: 1px solid #ffe39b; padding: 8px 10px; border-radius: 12px; }
+    .small { font-size: 12px; opacity: 0.8; }
+    .hintbox { background: #f7fbff; border: 1px solid #d8ecff; border-radius: 12px; padding: 10px; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: 2px 6px; border: 1px solid #ddd; border-bottom-width: 2px; border-radius: 6px; background: #fff; }
+    .levelbtns button { padding: 8px 10px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap row" style="justify-content: space-between;">
+    <h1>🌟 Phonics & Spelling</h1>
+    <div class="row">
+      <div class="pill">⭐ Stars: <span id="stars">0</span></div>
+      <div class="pill">🏅 Badges: <span id="badgesCount">0</span></div>
+      <button id="resetBtn" title="Reset progress">Reset</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap grid">
+  <section class="card">
+    <h2>Play</h2>
+
+    <div class="row" style="margin-bottom: 10px;">
+      <span class="pill">Level: <span id="levelName">1</span></span>
+      <span class="pill">Streak: <span id="streak">0</span></span>
+      <span class="pill">Round: <span id="round">1</span>/<span id="roundsTotal">10</span></span>
+    </div>
+
+    <div class="card" style="background:#fbfbff;">
+      <div class="small">Grown-up reads this (or tap “Sounds”):</div>
+      <div class="big" id="prompt">/c/ /a/ /t/</div>
+      <div class="small" id="pattern">CVC</div>
+    </div>
+
+    <div style="margin-top: 12px;">
+      <label class="small">Type the word:</label>
+      <input id="answer" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g., cat" />
+    </div>
+
+    <div class="row" style="margin-top: 12px;">
+      <button class="primary" id="checkBtn">Check</button>
+      <button id="nextBtn" disabled>Next</button>
+      <button id="hint1Btn">Hint: First letter</button>
+      <button id="hint2Btn">Hint: Blanks</button>
+      <button id="hint3Btn">Hint: Sounds</button>
+    </div>
+
+    <div class="hintbox" style="margin-top: 12px;">
+      <div class="small">Hints:</div>
+      <div id="hintsText">None yet.</div>
+    </div>
+
+    <div class="msg" id="message"></div>
+    <div class="small">Tip: Press <span class="kbd">Return</span> to check.</div>
+  </section>
+
+  <aside class="card">
+    <h2>Levels & Stickers</h2>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="small">Choose Level:</div>
+      <div class="row levelbtns" style="margin-top: 8px;">
+        <button data-level="1">1: CVC</button>
+        <button data-level="2">2: sh/ch/th</button>
+        <button data-level="3">3: silent-e</button>
+        <button data-level="4">4: vowel teams</button>
+      </div>
+      <div class="small" style="margin-top: 8px;">
+        Auto-unlocks badges at 10⭐, 25⭐, 50⭐ and streak milestones.
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <div class="small">Current goal</div>
+          <div class="big" id="goalText">Get 5 correct!</div>
+        </div>
+        <button id="newGameBtn" class="primary">New 10-round game</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="small">Badges earned:</div>
+      <div class="stickers" id="stickers"></div>
+      <div class="small" style="margin-top:10px;">Progress saves on this device.</div>
+    </div>
+  </aside>
+</main>
+
+<script>
+/** ---------------------------
+ *  Word banks by level
+ *  Each entry: { word, sounds, pattern }
+ * --------------------------*/
+const LEVELS = {
+  1: {
+    name: "1 (CVC)",
+    goal: "Get 5 correct!",
+    items: [
+      {word:"cat",  sounds:"/c/ /a/ /t/",  pattern:"CVC"},
+      {word:"map",  sounds:"/m/ /a/ /p/",  pattern:"CVC"},
+      {word:"sun",  sounds:"/s/ /u/ /n/",  pattern:"CVC"},
+      {word:"pig",  sounds:"/p/ /i/ /g/",  pattern:"CVC"},
+      {word:"hop",  sounds:"/h/ /o/ /p/",  pattern:"CVC"},
+      {word:"bed",  sounds:"/b/ /e/ /d/",  pattern:"CVC"},
+      {word:"run",  sounds:"/r/ /u/ /n/",  pattern:"CVC"},
+      {word:"log",  sounds:"/l/ /o/ /g/",  pattern:"CVC"},
+      {word:"cup",  sounds:"/c/ /u/ /p/",  pattern:"CVC"},
+      {word:"jet",  sounds:"/j/ /e/ /t/",  pattern:"CVC"}
+    ]
+  },
+  2: {
+    name: "2 (Digraphs)",
+    goal: "Use sh/ch/th!",
+    items: [
+      {word:"ship", sounds:"/sh/ /i/ /p/", pattern:"sh + CVC"},
+      {word:"fish", sounds:"/f/ /i/ /sh/", pattern:"CVC + sh"},
+      {word:"chat", sounds:"/ch/ /a/ /t/", pattern:"ch + CVC"},
+      {word:"chin", sounds:"/ch/ /i/ /n/", pattern:"ch + CVC"},
+      {word:"thin", sounds:"/th/ /i/ /n/", pattern:"th + CVC"},
+      {word:"this", sounds:"/th/ /i/ /s/", pattern:"th + CVC"},
+      {word:"shop", sounds:"/sh/ /o/ /p/", pattern:"sh + CVC"},
+      {word:"dish", sounds:"/d/ /i/ /sh/", pattern:"CVC + sh"},
+      {word:"chop", sounds:"/ch/ /o/ /p/", pattern:"ch + CVC"},
+      {word:"bath", sounds:"/b/ /a/ /th/", pattern:"CVC + th"}
+    ]
+  },
+  3: {
+    name: "3 (Silent-e)",
+    goal: "Remember the magic e!",
+    items: [
+      {word:"cake", sounds:"/c/ /ā/ /k/ (magic e)", pattern:"CVCe"},
+      {word:"bike", sounds:"/b/ /ī/ /k/ (magic e)", pattern:"CVCe"},
+      {word:"home", sounds:"/h/ /ō/ /m/ (magic e)", pattern:"CVCe"},
+      {word:"cute", sounds:"/c/ /yoo/ /t/ (magic e)", pattern:"CVCe"},
+      {word:"tape", sounds:"/t/ /ā/ /p/ (magic e)", pattern:"CVCe"},
+      {word:"ride", sounds:"/r/ /ī/ /d/ (magic e)", pattern:"CVCe"},
+      {word:"late", sounds:"/l/ /ā/ /t/ (magic e)", pattern:"CVCe"},
+      {word:"mice", sounds:"/m/ /ī/ /s/ (magic e)", pattern:"VCe (special)"},
+      {word:"take", sounds:"/t/ /ā/ /k/ (magic e)", pattern:"CVCe"},
+      {word:"like", sounds:"/l/ /ī/ /k/ (magic e)", pattern:"CVCe"}
+    ]
+  },
+  4: {
+    name: "4 (Vowel Teams)",
+    goal: "Try ai/ee/oa!",
+    items: [
+      {word:"rain", sounds:"/r/ /ai/ /n/", pattern:"ai"},
+      {word:"seat", sounds:"/s/ /ee/ /t/", pattern:"ea"},
+      {word:"boat", sounds:"/b/ /oa/ /t/", pattern:"oa"},
+      {word:"feet", sounds:"/f/ /ee/ /t/", pattern:"ee"},
+      {word:"mail", sounds:"/m/ /ai/ /l/", pattern:"ai"},
+      {word:"moon", sounds:"/m/ /oo/ /n/", pattern:"oo"},
+      {word:"peel", sounds:"/p/ /ee/ /l/", pattern:"ee"},
+      {word:"goat", sounds:"/g/ /oa/ /t/", pattern:"oa"},
+      {word:"team", sounds:"/t/ /ee/ /m/", pattern:"ea"},
+      {word:"seed", sounds:"/s/ /ee/ /d/", pattern:"ee"}
+    ]
+  }
+};
+
+const STORAGE_KEY = "phonics_game_progress_v1";
+
+const state = {
+  level: 1,
+  roundsTotal: 10,
+  roundIndex: 0,
+  current: null,
+  hintsUsedThisRound: new Set(),
+  stars: 0,
+  streak: 0,
+  correctInThisGame: 0,
+  badges: []
+};
+
+const BADGE_RULES = [
+  { id:"stars10",  emoji:"🏅", name:"10 Stars!",  check: s => s.stars >= 10 },
+  { id:"stars25",  emoji:"🥈", name:"25 Stars!",  check: s => s.stars >= 25 },
+  { id:"stars50",  emoji:"🥇", name:"50 Stars!",  check: s => s.stars >= 50 },
+  { id:"streak5",  emoji:"🔥", name:"5 Streak!",  check: s => s.streak >= 5 },
+  { id:"streak10", emoji:"🚀", name:"10 Streak!", check: s => s.streak >= 10 },
+];
+
+function saveProgress(){
+  const data = {
+    level: state.level,
+    stars: state.stars,
+    badges: state.badges,
+    streak: state.streak
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadProgress(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      state.level = data.level ?? 1;
+      state.stars = data.stars ?? 0;
+      state.badges = Array.isArray(data.badges) ? data.badges : [];
+      state.streak = data.streak ?? 0;
+    }
+  } catch(e) {}
+}
+
+function $(id){ return document.getElementById(id); }
+
+function setMessage(text, kind=""){
+  const el = $("message");
+  el.textContent = text;
+  el.className = "msg " + (kind || "");
+}
+
+function updateUI(){
+  $("stars").textContent = state.stars;
+  $("streak").textContent = state.streak;
+  $("round").textContent = String(state.roundIndex + 1);
+  $("roundsTotal").textContent = String(state.roundsTotal);
+  $("levelName").textContent = LEVELS[state.level].name;
+  $("goalText").textContent = LEVELS[state.level].goal;
+
+  $("badgesCount").textContent = String(state.badges.length);
+  const stickers = $("stickers");
+  stickers.innerHTML = "";
+  if(state.badges.length === 0){
+    stickers.innerHTML = `<div class="small">No badges yet — earn ⭐ to unlock!</div>`;
+  } else {
+    for(const b of state.badges){
+      const div = document.createElement("div");
+      div.className = "sticker";
+      div.textContent = `${b.emoji} ${b.name}`;
+      stickers.appendChild(div);
+    }
+  }
+}
+
+function pickWord(){
+  const list = LEVELS[state.level].items;
+  const item = list[Math.floor(Math.random() * list.length)];
+  state.current = item;
+  state.hintsUsedThisRound = new Set();
+
+  $("prompt").textContent = item.sounds;
+  $("pattern").textContent = item.pattern;
+  $("answer").value = "";
+  $("answer").focus();
+
+  $("hintsText").textContent = "None yet.";
+  $("nextBtn").disabled = true;
+  setMessage("");
+}
+
+function blanksFor(word){
+  // Show underscores but keep same length (and spaces for multi-part if you add later)
+  return word.split("").map(ch => (/[a-z]/i.test(ch) ? "_" : ch)).join(" ");
+}
+
+function applyHint(type){
+  if(!state.current) return;
+  const w = state.current.word;
+
+  if (type === "first") {
+    state.hintsUsedThisRound.add("first");
+    $("hintsText").textContent = `First letter: ${w[0].toUpperCase()}`;
+  }
+  if (type === "blanks") {
+    state.hintsUsedThisRound.add("blanks");
+    $("hintsText").textContent = `Blanks: ${blanksFor(w)}`;
+  }
+  if (type === "sounds") {
+    state.hintsUsedThisRound.add("sounds");
+    $("hintsText").textContent = `Sounds: ${state.current.sounds}`;
+  }
+}
+
+function awardBadgesIfNeeded(){
+  for (const rule of BADGE_RULES){
+    if (state.badges.some(b => b.id === rule.id)) continue;
+    if (rule.check(state)){
+      const earned = { id: rule.id, emoji: rule.emoji, name: rule.name };
+      state.badges.push(earned);
+      setMessage(`🎉 Badge unlocked: ${earned.emoji} ${earned.name}`, "good");
+    }
+  }
+}
+
+function checkAnswer(){
+  if(!state.current) return;
+
+  const guess = $("answer").value.trim().toLowerCase();
+  const target = state.current.word.toLowerCase();
+
+  if(!guess){
+    setMessage("Type an answer first 🙂");
+    return;
+  }
+
+  // If correct:
+  if (guess === target){
+    // Stars: 1 base, -1 if used any hints (min 1 star total for correct)
+    const hintPenalty = state.hintsUsedThisRound.size > 0 ? 0 : 1; 
+    // Explanation: if NO hints, give 2 stars; if hints used, give 1 star.
+    const starsEarned = 1 + hintPenalty;
+
+    state.stars += starsEarned;
+    state.streak += 1;
+    state.correctInThisGame += 1;
+
+    setMessage(`✅ Correct! +${starsEarned}⭐`, "good");
+    awardBadgesIfNeeded();
+    saveProgress();
+
+    $("nextBtn").disabled = false;
+    $("checkBtn").disabled = true;
+    return;
+  }
+
+  // If wrong:
+  state.streak = 0;
+  setMessage(`❌ Not quite. The word is: ${state.current.word}`, "bad");
+  saveProgress();
+
+  $("nextBtn").disabled = false;
+  $("checkBtn").disabled = true;
+}
+
+function nextRound(){
+  state.roundIndex += 1;
+  $("checkBtn").disabled = false;
+
+  if (state.roundIndex >= state.roundsTotal){
+    // End of game summary + small sticker reward if did well
+    const c = state.correctInThisGame;
+    if (c >= 8){
+      state.stars += 3;
+      setMessage(`🏆 Game over! You got ${c}/${state.roundsTotal}. Bonus +3⭐!`, "good");
+    } else if (c >= 5){
+      state.stars += 1;
+      setMessage(`🎉 Game over! You got ${c}/${state.roundsTotal}. Bonus +1⭐!`, "good");
+    } else {
+      setMessage(`💪 Game over! You got ${c}/${state.roundsTotal}. Practice makes strong brains!`, "");
+    }
+    awardBadgesIfNeeded();
+    saveProgress();
+    updateUI();
+
+    // Start a new game automatically after a moment? (We’ll keep it manual.)
+    return;
+  }
+
+  updateUI();
+  pickWord();
+}
+
+function newGame(){
+  state.roundIndex = 0;
+  state.correctInThisGame = 0;
+  $("checkBtn").disabled = false;
+  updateUI();
+  pickWord();
+}
+
+function setLevel(n){
+  state.level = n;
+  saveProgress();
+  updateUI();
+  newGame();
+}
+
+function resetAll(){
+  localStorage.removeItem(STORAGE_KEY);
+  // Reset runtime state (keep defaults)
+  state.level = 1;
+  state.stars = 0;
+  state.streak = 0;
+  state.badges = [];
+  newGame();
+  updateUI();
+  setMessage("Progress reset.");
+}
+
+(function init(){
+  loadProgress();
+  updateUI();
+  newGame();
+
+  $("hint1Btn").addEventListener("click", () => applyHint("first"));
+  $("hint2Btn").addEventListener("click", () => applyHint("blanks"));
+  $("hint3Btn").addEventListener("click", () => applyHint("sounds"));
+
+  $("checkBtn").addEventListener("click", checkAnswer);
+  $("nextBtn").addEventListener("click", nextRound);
+  $("newGameBtn").addEventListener("click", () => { setMessage(""); newGame(); });
+  $("resetBtn").addEventListener("click", resetAll);
+
+  document.querySelectorAll("[data-level]").forEach(btn => {
+    btn.addEventListener("click", () => setLevel(Number(btn.dataset.level)));
+  });
+
+  $("answer").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !$("checkBtn").disabled) checkAnswer();
+  });
+
+  // Register service worker for offline
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
