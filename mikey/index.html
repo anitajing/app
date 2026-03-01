@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mikey1</title>
+
+<!-- If you later host as PWA, keep these -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4a6cff">
+
+<style>
+  :root{
+    --bg:#f4f7ff;
+    --card:#ffffff;
+    --ink:#142033;
+    --muted:#66739a;
+    --blue:#4a6cff;
+    --green:#22c55e;
+    --orange:#f59e0b;
+    --shadow: 0 14px 34px rgba(0,0,0,.14);
+    --radius: 18px;
+  }
+
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    display:flex;
+    justify-content:center;
+    padding: 14px;
+    color: var(--ink);
+  }
+
+  .app{
+    width: min(520px, 100%);
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    position: relative;
+    overflow:hidden;
+    border: 4px solid transparent;
+    transition: border-color .16s ease, transform .16s ease;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    padding: 6px 4px 10px;
+  }
+
+  .title{
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing:.2px;
+  }
+
+  .pill{
+    background:#eef3ff;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-weight: 800;
+    font-size: 13px;
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+  }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    margin: 6px 0;
+  }
+
+  select{
+    padding:10px 12px;
+    border-radius: 12px;
+    border: 2px solid #d9e2ff;
+    background:#fff;
+    font-size:14px;
+  }
+
+  .question{
+    text-align:center;
+    font-size: 46px;
+    font-weight: 900;
+    margin: 10px 0 8px;
+    letter-spacing: 1px;
+  }
+
+  .answerBox{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .answer{
+    width: 170px;
+    font-size: 28px;
+    font-weight: 900;
+    text-align:center;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 2px solid #d9e2ff;
+    background: #fff;
+    color: var(--ink);
+  }
+
+  .miniBtn{
+    border:0;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-weight: 900;
+    background: var(--blue);
+    color:#fff;
+    cursor:pointer;
+    user-select:none;
+  }
+  .miniBtn:active{ transform: scale(.98); }
+
+  .msgArea{
+    min-height: 36px;
+    margin: 10px 0 6px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    font-weight: 900;
+    font-size: 18px;
+  }
+
+  .stats{
+    display:flex;
+    justify-content:center;
+    gap: 10px;
+    flex-wrap:wrap;
+    margin: 6px 0 12px;
+  }
+  .stat{
+    background:#eef3ff;
+    border-radius:999px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 900;
+  }
+  .stat span{ color: var(--muted); font-weight: 800; }
+
+  /* keypad */
+  .pad{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .key{
+    border:0;
+    border-radius: 16px;
+    padding: 16px 0;
+    font-size: 26px;
+    font-weight: 900;
+    background: #f1f5ff;
+    color: var(--ink);
+    cursor:pointer;
+    user-select:none;
+    box-shadow: 0 6px 14px rgba(0,0,0,.06);
+  }
+  .key:active{ transform: scale(.98); }
+
+  .key.primary{
+    background: var(--blue);
+    color:#fff;
+  }
+
+  .key.soft{
+    background: #fff7e6;
+    color: #8a5b00;
+  }
+
+  .key.danger{
+    background: #ffecec;
+    color: #9a1f1f;
+  }
+
+  /* feedback overlay */
+  .overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    opacity:0;
+    transform: scale(.98);
+    transition: opacity .14s ease, transform .14s ease;
+    z-index: 5;
+  }
+  .overlay.show{
+    opacity:1;
+    transform: scale(1);
+  }
+  .bubble{
+    padding: 18px 22px;
+    border-radius: 18px;
+    color:#fff;
+    font-weight: 1000;
+    font-size: 34px;
+    box-shadow: 0 16px 38px rgba(0,0,0,.2);
+    text-align:center;
+    line-height:1.1;
+  }
+  .bubble.good{ background: var(--green); }
+  .bubble.soft{ background: var(--orange); }
+  .bubble.level{ background: #7c3aed; } /* purple */
+
+  .flash-good{ border-color: var(--green); transform: translateY(-2px); }
+  .flash-soft{ border-color: var(--orange); transform: translateY(-2px); }
+  .flash-level{ border-color: #7c3aed; transform: translateY(-2px); }
+
+  /* fireworks canvas */
+  #fx{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index: 4;
+    opacity:0;
+    transition: opacity .2s ease;
+  }
+  #fx.show{ opacity:1; }
+
+  .hint{
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align:center;
+  }
+</style>
+</head>
+
+<body>
+  <div class="app" id="app">
+    <canvas id="fx"></canvas>
+
+    <header>
+      <div class="title">🧸 Kids Math App</div>
+      <div class="pill">⭐ 10-in-a-row party: <span id="tenProgress">0</span>/10</div>
+    </header>
+
+    <div class="row">
+      <select id="mode">
+        <option value="mix">Mixed</option>
+        <option value="1d">1-digit ± 1-digit</option>
+        <option value="2d1d">2-digit ± 1-digit</option>
+      </select>
+
+      <select id="operation">
+        <option value="mix">+ and -</option>
+        <option value="+">Addition Only</option>
+        <option value="-">Subtraction Only</option>
+      </select>
+
+      <button class="miniBtn" id="newBtn">New</button>
+    </div>
+
+    <div class="question" id="question">—</div>
+
+    <div class="answerBox">
+      <input class="answer" id="answer" readonly value="" aria-label="Answer" />
+      <button class="miniBtn" id="checkBtn">✅ Check</button>
+    </div>
+
+    <div class="msgArea" id="msg"></div>
+
+    <div class="stats">
+      <div class="stat">Total: <b id="total">0</b></div>
+      <div class="stat">Correct: <b id="correct">0</b></div>
+      <div class="stat"><span>Accuracy</span>: <b id="acc">0%</b></div>
+    </div>
+
+    <div class="pad" aria-label="Keypad">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+
+      <button class="key soft" data-action="back">⌫</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key primary" data-action="check">OK</button>
+
+      <button class="key danger" data-action="clear" style="grid-column: 1 / span 3;">Clear</button>
+    </div>
+
+    <div class="hint">Tip: Tap numbers → OK. (No typing needed.)</div>
+
+    <div class="overlay" id="overlay" aria-hidden="true">
+      <div class="bubble good" id="bubble">Great job! ✅</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    a: 0, b: 0, op: "+",
+    total: 0, correct: 0,
+    // "10题大烟花"：这里用“连续做对10题”最像闯关
+    streak10: 0
+  };
+
+  const app = $("app");
+  const answerEl = $("answer");
+  const msgEl = $("msg");
+
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function pickOp(){
+    const selected = $("operation").value;
+    if (selected === "mix") return Math.random() < 0.5 ? "+" : "-";
+    return selected;
+  }
+
+  function correctAnswer(){
+    return state.op === "+" ? (state.a + state.b) : (state.a - state.b);
+  }
+
+  function setAnswerText(text){
+    answerEl.value = text;
+    // keep "focus" feeling: prevent accidental selection/keyboard
+    answerEl.blur();
+  }
+
+  function appendDigit(d){
+    const cur = answerEl.value || "";
+    // limit length so it stays kid-friendly
+    if (cur.length >= 3) return;
+    setAnswerText(cur + String(d));
+  }
+
+  function backspace(){
+    const cur = answerEl.value || "";
+    setAnswerText(cur.slice(0, -1));
+  }
+
+  function clearAnswer(){
+    setAnswerText("");
+  }
+
+  function updateStats(){
+    $("total").textContent = state.total;
+    $("correct").textContent = state.correct;
+    const acc = state.total ? Math.round((state.correct / state.total) * 100) : 0;
+    $("acc").textContent = acc + "%";
+    $("tenProgress").textContent = state.streak10;
+  }
+
+  function showOverlay(kind, text, ms){
+    const overlay = $("overlay");
+    const bubble = $("bubble");
+
+    overlay.classList.remove("show");
+    bubble.className = "bubble " + kind;
+    bubble.textContent = text;
+
+    // card border flash
+    app.classList.remove("flash-good","flash-soft","flash-level");
+    if (kind === "good") app.classList.add("flash-good");
+    if (kind === "soft") app.classList.add("flash-soft");
+    if (kind === "level") app.classList.add("flash-level");
+
+    overlay.classList.add("show");
+    setTimeout(() => {
+      overlay.classList.remove("show");
+      app.classList.remove("flash-good","flash-soft","flash-level");
+    }, ms);
+  }
+
+  function setMessage(text){
+    msgEl.textContent = text || "";
+  }
+
+  function generateQuestion(){
+    const mode = $("mode").value;
+    state.op = pickOp();
+
+    let a, b;
+    if (mode === "1d"){
+      a = randInt(0, 9);
+      b = randInt(0, 9);
+    } else if (mode === "2d1d"){
+      a = randInt(10, 99);
+      b = randInt(0, 9);
+    } else {
+      if (Math.random() < 0.5){
+        a = randInt(0, 9);
+        b = randInt(0, 9);
+      } else {
+        a = randInt(10, 99);
+        b = randInt(0, 9);
+      }
+    }
+
+    // no negatives
+    if (state.op === "-" && a < b) [a, b] = [b, a];
+
+    state.a = a; state.b = b;
+
+    $("question").textContent = `${a} ${state.op} ${b} = ?`;
+    clearAnswer();
+    setMessage("");
+  }
+
+  // ---------------- Fireworks (Canvas) ----------------
+  const canvas = $("fx");
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvas(){
+    const rect = app.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * devicePixelRatio);
+    canvas.height = Math.floor(rect.height * devicePixelRatio);
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+  window.addEventListener("resize", resizeCanvas);
+
+  function fireworksBurst(durationMs = 1600){
+    resizeCanvas();
+    canvas.classList.add("show");
+
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+
+    let particles = [];
+    const gravity = 0.06;
+
+    function spawnBurst(){
+      const x = randInt(Math.floor(W*0.15), Math.floor(W*0.85));
+      const y = randInt(Math.floor(H*0.18), Math.floor(H*0.42));
+      const count = 90;
+
+      for (let i=0;i<count;i++){
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.6 + Math.random() * 3.4;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 55 + Math.random() * 25,
+          r: 2 + Math.random() * 2.5
+        });
+      }
+    }
+
+    spawnBurst();
+    setTimeout(spawnBurst, 220);
+    setTimeout(spawnBurst, 440);
+
+    let running = true;
+    const start = performance.now();
+
+    function frame(t){
+      if (!running) return;
+
+      ctx.clearRect(0,0, W, H);
+      // subtle fade background
+      ctx.fillStyle = "rgba(255,255,255,0.10)";
+      ctx.fillRect(0,0,W,H);
+
+      particles = particles.filter(p => p.life > 0);
+      for (const p of particles){
+        p.life -= 1;
+        p.vy += gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // rainbow-ish without specifying a fixed palette too tightly
+        const hue = (p.life * 7) % 360;
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${hue}, 95%, 55%, 0.95)`;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      if (t - start < durationMs){
+        requestAnimationFrame(frame);
+      } else {
+        running = false;
+        canvas.classList.remove("show");
+        ctx.clearRect(0,0,W,H);
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // ---------------- Check logic ----------------
+  function check(){
+    const v = answerEl.value;
+    if (!v) return;
+
+    const user = parseInt(v, 10);
+    if (Number.isNaN(user)) return;
+
+    const right = correctAnswer();
+    state.total += 1;
+
+    if (user === right){
+      state.correct += 1;
+      state.streak10 += 1;
+      updateStats();
+
+      setMessage("Yay! Keep going! 🌟");
+      showOverlay("good", "Correct! Awesome! ✅🎉", 600);
+
+      // Every 10 correct in a row => BIG fireworks
+      if (state.streak10 >= 10){
+        state.streak10 = 0;
+        updateStats();
+        showOverlay("level", "WOW! 10 Correct! 🎆🎇", 900);
+        fireworksBurst(1900);
+        // next question a bit later so the celebration feels big
+        setTimeout(generateQuestion, 1050);
+      } else {
+        setTimeout(generateQuestion, 520);
+      }
+
+    } else {
+      // Encourage, not punish: keep streak10 but reset it (so the 10-correct party feels earned)
+      state.streak10 = 0;
+      updateStats();
+
+      setMessage("Nice try! You’re so close 😊");
+      showOverlay("soft", "Nice try! 😊 Try again!", 900);
+      // Keep the same question; just clear answer
+      setTimeout(clearAnswer, 250);
+    }
+  }
+
+  // ---------------- Events ----------------
+  $("newBtn").addEventListener("click", () => { state.streak10 = 0; updateStats(); generateQuestion(); });
+  $("checkBtn").addEventListener("click", check);
+
+  // keypad clicks
+  document.querySelectorAll(".key").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const digit = btn.getAttribute("data-k");
+      const action = btn.getAttribute("data-action");
+
+      if (digit !== null){
+        appendDigit(digit);
+        return;
+      }
+      if (action === "back") backspace();
+      if (action === "clear") clearAnswer();
+      if (action === "check") check();
+    });
+  });
+
+  // change settings => new question + reset 10 streak
+  $("mode").addEventListener("change", () => { state.streak10 = 0; updateStats(); generateQuestion(); });
+  $("operation").addEventListener("change", () => { state.streak10 = 0; updateStats(); generateQuestion(); });
+
+  // init
+  updateStats();
+  generateQuestion();
+
+  // Optional PWA registration (works after you host it on HTTPS with sw.js present)
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(()=>{});
+    });
+  }
+})();
+</script>
+</body>
+</html>
