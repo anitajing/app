@@ -1130,3 +1130,10 @@ function shuffleArray(arr) {
   }
   return a;
 }
+// --- iPad touch fix: treat touch as mouse press (prevents double-trigger) ---
+function touchStarted() {
+  if (typeof mousePressed === "function") {
+    mousePressed();
+  }
+  return false;
+}
