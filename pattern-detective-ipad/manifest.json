@@ -1,1 +1,10 @@
-
+{
+  "name": "Detective & Cat (iPad)",
+  "short_name": "DetectiveCat",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220"
+}
