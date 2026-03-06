@@ -1,4 +1,4 @@
-const CACHE = "detective-cat-v1";
+const CACHE = "detective-cat-v2";
 
 const ASSETS = [
   "./",
